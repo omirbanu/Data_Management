@@ -1,0 +1,38 @@
+
+#our lovely queries about couple)
+
+db.full_info2.find({ $and:[
+    {$and:[{"actors_list.mr.actor_l":"Bardem"},{"actors_list.mr.actor_n":"Javier"},{"actors_list.mr.id":27522}]},
+    {$and:[{"actors_list.mr.actor_l":"Cruz"},{"actors_list.mr.actor_n":"Penélope"},{"actors_list.mr.id":589713}]}]
+},{
+        id:1,
+        name:1,
+        rank:1,
+        year:1,
+        genres:1,
+        directors_list:1
+})
+
+
+db.full_info2.find({
+    $and:[{"directors_list.d_names.d_name.last_name":"Allen"},{"directors_list.d_names.d_name.first_name":"Woody"}
+        ]
+})
+
+db.full_info2.find(
+    {
+        genres: {$elemMatch: {genres:["Comedy","Drama"]} }
+    }
+    )
+
+db.full_info2.find({$and:[
+        {$and:[{"directors_list.d_names.d_name.last_name":"Allen"},{"directors_list.d_names.d_name.first_name":"Woody"}]},
+        {$and:[{"actors_list.mr.actor_l":"Baldwin"},{"actors_list.mr.actor_n":"Alec"}]}
+    ]
+    })
+
+db.full_info2.find({rank:{$not:{$gt:5}}})
+
+db.full_info2.find({rank:{$gt:5}})
+
+

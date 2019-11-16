@@ -1,0 +1,122 @@
+
+https://www.nosqlbooster.com/downloads
+install it
+and then open it
+and u can use it locally or connect to yr db
+doesnot matter
+so finally
+just to importing:
+
+button: import
+then : mongoimport utility(json,csv) faster,
+tick thet smth with jsonArray
+---------------------------------------
+
+in sql we need to do this:
+drop table a_RR;
+create table a_RR(
+id int(11),
+first_name varchar(40),
+last_name varchar(40),
+gender varchar(40),
+movie_id int(11),
+role varchar(100),
+movie_name varchar(100),
+movie_year varchar(40),
+movie_rank int(10),
+movie_genre varchar(40),
+director_id int(11),
+dir_first_name varchar(40),
+dir_last_name varchar(40)
+);
+
+insert into a_RR
+select a.*, r.movie_id,r.role, m.name, m.year, m.rank, mg.genre,dd.* from actors a join roles r on a.id=r.actor_id
+join movies m on m.id=r.movie_id
+join movies_genres mg on m.id=mg.movie_id join movies_directors d on m.id=d.movie_id
+join directors dd on d.director_id=dd.id;
+
+
+
+and then import this table to mongo with name actors_movs
+
+---------------------------------------------
+
+db.movies_genres.aggregate( [ { $group : { _id : "$movie_id", genres: {$push : "$genre"}} },{ $out : "M_genres" } ] )
+
+db.movies_directors.aggregate([{
+    $lookup: {
+           from: "directors",
+           localField: "director_id",
+           foreignField: "id",
+           as: "dir_nome"
+         }
+}, {
+    $project:{
+        director_id:1,
+        movie_id:1,
+        "dir_nome.first_name":1,
+        "dir_nome.last_name":1
+    }
+}, {$out: "M_d_n"}])
+db.M_d_n.find()
+//db.M_d_n_1.drop()
+db.M_d_n.aggregate( [ { $group : { _id : "$movie_id", d_names: {$push :{ id:"$director_id",d_name:"$dir_nome"}}} },{ $out : "M_d_n_1" } ] )
+db.M_d_n_1.find({$and: [{_id: 15089}]})
+
+
+db.movies.aggregate([
+    {
+        $lookup: {
+               from: "M_genres",
+               localField: "id",
+               foreignField: "_id",
+               as: "genres"
+             }
+    },{
+        $match: { "genres": { $ne: [] } }
+    },
+    {
+        $out:"M_g_m"
+    }
+    ])
+    
+db.M_g_m.aggregate([{
+    $lookup: {
+           from: "M_d_n_1",
+           localField: "id",
+           foreignField: "_id",
+           as: "directors_list"
+         }
+}, {$out:"M_d_n_gg"}])
+
+db.actors_movs.find()
+db.actors_movs.aggregate( [ { $group : { _id :{ "movie_id":"$movie_id",
+    "movie_name":"$movie_name"
+},mr: {$push : {id:"$id",role:"$role", actor_l:"$last_name", actor_n:"$first_name"}}} },{$out:"M_actors_list"},
+ ] ,{  allowDiskUse:true } )
+ 
+db.M_d_n_gg.aggregate([
+    {
+        $lookup: {
+               from: "M_actors_list",
+               localField: "id",
+               foreignField: "_id.movie_id",
+               as: "actors_list"
+             }
+    },
+    
+   {
+       $project:{
+           id:1,
+           name:1,
+           rank:1,
+           year:1,
+           genres:1,
+           directors_list:1,
+           "actors_list.mr":1
+          
+       }
+   },{$out:"full_info2"}
+    ])
+db.full_info2.find()
